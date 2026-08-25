@@ -45,6 +45,9 @@ func (s *Service) Authorize(code string) (ShareCard, error) {
 	if err != nil {
 		return ShareCard{}, err
 	}
+	if c == nil {
+		return ShareCard{}, ErrInvalidCode
+	}
 	if c.Deleted {
 		return ShareCard{}, ErrDeleted
 	}
@@ -59,7 +62,7 @@ func (s *Service) Download(code, ip string) (Download, error) {
 		return Download{}, err
 	}
 	if c == nil {
-		panic("nil card dereference")
+		return Download{Code: code, IP: ip, At: s.clock(), Success: false, Reason: "invalid"}, ErrInvalidCode
 	}
 	if c.Deleted {
 		return Download{CardID: c.ID, Code: code, IP: ip, At: s.clock(), Success: false, Reason: "deleted"}, ErrDeleted

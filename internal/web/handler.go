@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"tempcards/internal/share"
@@ -42,8 +43,17 @@ func (a *API) download(w http.ResponseWriter, r *http.Request) {
 	code := strings.TrimSpace(r.URL.Query().Get("code"))
 	d, e := a.Service.Download(code, r.RemoteAddr)
 	if e != nil {
-		http.Error(w, e.Error(), 404)
+		switch {
+		case errors.Is(e, share.ErrInvalidCode):
+			WriteError(w, http.StatusNotFound, "invalid_code", "卡密无效")
+		case errors.Is(e, share.ErrDeleted):
+			WriteError(w, http.StatusNotFound, "card_deleted", "该卡密已被删除")
+		case errors.Is(e, share.ErrExpired):
+			WriteError(w, http.StatusGone, "card_expired", "该卡密已过期")
+		default:
+			WriteError(w, http.StatusNotFound, "download_failed", e.Error())
+		}
 		return
 	}
-	json.NewEncoder(w).Encode(d)
+	WriteJSON(w, http.StatusOK, d)
 }
