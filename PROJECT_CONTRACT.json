@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "metrics": {
+    "production_loc": 2004,
+    "production_files": 39,
+    "production_packages": 9,
+    "test_files": 9,
+    "production_functions": 269,
+    "decision_points": 249
+  },
+  "persistence": {
+    "module": "go.etcd.io/bbolt",
+    "entities": [
+      "ShareCard",
+      "Download",
+      "AccessGrant",
+      "ShareEvent"
+    ],
+    "reopen_test": "TestPersistenceSurvivesReopen"
+  },
+  "workflows": [
+    {
+      "steps": [
+        "validate owner, filename, code and size",
+        "apply policy limits and expiry",
+        "persist ShareCard in bbolt",
+        "return card details and audit event"
+      ],
+      "test": "TestWorkflowCreateShare"
+    },
+    {
+      "steps": [
+        "receive code from download endpoint",
+        "lookup persisted ShareCard",
+        "reject deleted or expired cards",
+        "record Download result"
+      ],
+      "test": "TestWorkflowDownloadShare"
+    },
+    {
+      "steps": [
+        "load card by identifier",
+        "mark card deleted",
+        "persist lifecycle update",
+        "emit deletion audit event"
+      ],
+      "test": "TestWorkflowDeleteShare"
+    },
+    {
+      "steps": [
+        "validate recipient address",
+        "issue AccessGrant",
+        "persist grant",
+        "dispatch notification"
+      ],
+      "test": "TestWorkflowGrantAccess"
+    }
+  ]
+}
